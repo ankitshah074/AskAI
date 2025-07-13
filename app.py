@@ -120,7 +120,8 @@ def main():
             # top_chunks = [chunks[i] for i in I[0]]
             # context = " ".join(top_chunks)
             docs = vector_store.similarity_search(query=query, k=5)
-            llm = ChatGroq(model="llama3-8b-8192")
+            llm = ChatGroq(model="llama3-8b-8192",
+                          api_key=GROQ_API_KEY)
             chain = load_qa_chain(llm=llm, chain_type="stuff")
             response = chain.run(input_documents=docs, question=query)
 
