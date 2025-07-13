@@ -18,8 +18,8 @@ import os
 import pickle
 
 # Page setup
-st.set_page_config(page_title="GenAI Doc Assistant", layout="wide")
-st.title("📄 GenAI Document Assistant 🌍")
+st.set_page_config(page_title="AI Doc Assistant", layout="wide")
+st.title("📄 AI Document Assistant 🌍")
 st.markdown("""
 Upload **PDF** or **DOCX** file.  
 
