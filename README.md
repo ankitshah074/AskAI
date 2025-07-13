@@ -55,6 +55,6 @@ check it- https://askai-doc.streamlit.app/
 
 ```bash
 git clone https://github.com/ankitshah074/AskAI.git
-cd genai-doc-assistant
+cd AskAI
 pip install -r requirements.txt
 streamlit run app.py
