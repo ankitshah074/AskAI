@@ -26,7 +26,7 @@ Upload **PDF** or **DOCX** file.
 """)
 from dotenv import load_dotenv
 load_dotenv()
-GROQ_API_KEY = st.secrets.get("GROQ_API_KEY"))
+GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
 
 def extract_text_from_page(page):
     """Extract text from a page with orientation correction using OCR if needed."""
