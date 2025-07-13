@@ -2,6 +2,10 @@
 
 **GenAI Document Assistant** is a AI-powered application that allows users to upload documents (PDF, DOCX) and ask questions in any major language. The assistant intelligently understands the document, retrieves relevant context, and answers questions using advanced language models and vector similarity search.
 
+## 📸 Screenshot
+
+![App Screenshot](https://github.com/ankitshah074/AskAI/blob/main/AskAI.png)
+
 check it- https://askai-doc.streamlit.app/
 
 ---
