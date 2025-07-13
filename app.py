@@ -94,7 +94,7 @@ def main():
                     
                     with st.spinner("🔍 Indexing document..."):
                         embeddings = SentenceTransformerEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-                        vector_store = Chroma.from_texts(chunks, embedding=embeddings)
+                        vector_store = FAISS.from_texts(chunks, embedding=embeddings)
                 else:
                     with st.spinner("Downloading and loading embeddings, please wait..."):
                         embeddings = SentenceTransformerEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
