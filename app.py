@@ -26,6 +26,7 @@ Upload **PDF** or **DOCX** file.
 """)
 from dotenv import load_dotenv
 load_dotenv()
+GROQ_API_KEY = st.secrets.get("GROQ_API_KEY"))
 
 def extract_text_from_page(page):
     """Extract text from a page with orientation correction using OCR if needed."""
@@ -121,7 +122,7 @@ def main():
             # context = " ".join(top_chunks)
             docs = vector_store.similarity_search(query=query, k=5)
             llm = ChatGroq(model="llama3-8b-8192",
-                          api_key=GROQ_API_KEY)
+                          api_key = GROQ_API_KEY)
             chain = load_qa_chain(llm=llm, chain_type="stuff")
             response = chain.run(input_documents=docs, question=query)
 
