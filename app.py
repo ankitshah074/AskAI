@@ -21,7 +21,7 @@ import pickle
 st.set_page_config(page_title="GenAI Doc Assistant", layout="wide")
 st.title("📄 GenAI Document Assistant 🌍")
 st.markdown("""
-Upload **PDF** or **DOCX** file.  
+Upload **PDF** or **DOCX** file and ask any Question related to your uploaded document.  
 
 """)
 from dotenv import load_dotenv
