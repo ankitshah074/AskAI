@@ -8,7 +8,8 @@ from langchain_community.embeddings import HuggingFaceInstructEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.vectorstores import Chroma
 from langchain_groq import ChatGroq
-from langchain.chains.question_answering import load_qa_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.prompts import ChatPromptTemplate
 from langchain_community.embeddings import SentenceTransformerEmbeddings
 import numpy as np
 import tempfile
@@ -112,6 +113,15 @@ def main():
 
         # Input query
         query = st.text_input("🗣️ Ask your question (in any language):")
+        prompt = ChatPromptTemplate.from_template("""
+        You are an AI assistant. Use the following context to answer the question.
+        If the answer is not found, say "Information not available in the document."
+        
+        Context:
+        {context}
+        
+        Question: {question}
+        """)
 
         if query:
             # query_embedding = embedder.encode([query])
@@ -121,8 +131,11 @@ def main():
             docs = vector_store.similarity_search(query=query, k=5)
             llm = ChatGroq(model="llama3-8b-8192",
                           api_key = GROQ_API_KEY)
-            chain = load_qa_chain(llm=llm, chain_type="stuff")
-            response = chain.run(input_documents=docs, question=query)
+            chain = create_stuff_documents_chain(llm, prompt)
+            response = chain.invoke({
+            "context": docs,
+            "question": query
+            })
 
             st.write("🤖 **Response:**", response)
 
