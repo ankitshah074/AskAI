@@ -13,12 +13,19 @@ check it- https://askai-doc.streamlit.app/
 ## 🌟 Features
 
 📁 Multi-file support — PDF, DOCX, TXT
+
 🔍 Semantic search using MiniLM embeddings
+
 🧩 Chunking using LangChain’s RecursiveCharacterTextSplitter
+
 📦 Vector storage via FAISS or Chroma
+
 ⚡ Fast LLM inference using Groq’s LLaMA-3.1 models
+
 ❓ Ask questions directly from document content
+
 💾 Local chunk caching for faster repeated uploads
+
 🌐 Streamlit-based UI for easy interaction 
 
 ---
@@ -43,7 +50,6 @@ Upload File → Extract Text → Chunk Text → Create Embeddings
 1️⃣ Upload Document
 
 User uploads a PDF, TXT, or DOCX file.
-The correct extractor is chosen automatically.
 
 2️⃣ Text Extraction
 
