@@ -5,7 +5,6 @@ from sentence_transformers import SentenceTransformer
 from transformers import pipeline
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceInstructEmbeddings
-from langchain.chains import ConversationalRetrievalChain
 from langchain_community.vectorstores import FAISS
 from langchain.llms import HuggingFaceHub
 from langchain_community.vectorstores import Chroma
