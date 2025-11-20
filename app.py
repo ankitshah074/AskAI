@@ -8,7 +8,7 @@ from langchain_community.embeddings import HuggingFaceInstructEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.vectorstores import Chroma
 from langchain_groq import ChatGroq
-from langchain.chains.question_answering import load_qa_chain
+from langchain_community.chains.question_answering import load_qa_chain
 from langchain_community.embeddings import SentenceTransformerEmbeddings
 import numpy as np
 import tempfile
