@@ -90,8 +90,11 @@ Interactive interface for uploading files and asking queries.
 
 ## Example Use Cases
 📚 Students: Ask questions about lecture notes or study material
+
 🧑‍💼 Professionals: Extract summaries from business reports or whitepapers
+
 👨‍⚖️ Legal: Query long contracts or case files
+
 📊 Research: Analyze papers or data documentation
 
 
@@ -103,4 +106,5 @@ Interactive interface for uploading files and asking queries.
 git clone https://github.com/ankitshah074/AskAI.git
 cd AskAI
 pip install -r requirements.txt
+GROQ_API_KEY=your_key_here //file .env
 streamlit run app.py
