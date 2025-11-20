@@ -8,7 +8,7 @@ from langchain_community.embeddings import HuggingFaceInstructEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.vectorstores import Chroma
 from langchain_groq import ChatGroq
-from langchain_community.chains.question_answering import load_qa_chain
+from langchain_community.chains import RetrievalQA
 from langchain_community.embeddings import SentenceTransformerEmbeddings
 import numpy as np
 import tempfile
@@ -119,8 +119,12 @@ def main():
             # context = " ".join(top_chunks)
             docs = vector_store.similarity_search(query=query, k=5)
             llm = ChatGroq(model="llama3-8b-8192")
-            chain = load_qa_chain(llm=llm, chain_type="stuff")
-            response = chain.run(input_documents=docs, question=query)
+            qa = RetrievalQA.from_chain_type(
+                llm=llm,
+                chain_type="stuff",
+                retriever=vectorstore.as_retriever()
+            )
+            response = qa.invoke({"query": query})
 
             st.write("🤖 **Response:**", response)
 
