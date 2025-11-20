@@ -111,7 +111,7 @@ def main():
                 response = rag_chain.invoke(query)
 
             st.write("🤖 **Response:**")
-            st.success(response)
+            st.success(response.content)
 
 
 if __name__ == "__main__":
