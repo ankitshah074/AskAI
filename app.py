@@ -3,13 +3,14 @@ from PyPDF2 import PdfReader
 from docx import Document
 from sentence_transformers import SentenceTransformer
 from transformers import pipeline
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceInstructEmbeddings
+from langchain.chains import ConversationalRetrievalChain
 from langchain_community.vectorstores import FAISS
+from langchain.llms import HuggingFaceHub
 from langchain_community.vectorstores import Chroma
 from langchain_groq import ChatGroq
-from langchain.chains.combine_documents.stuff import create_stuff_documents_chain
-from langchain.prompts import ChatPromptTemplate
+from langchain.chains.question_answering import load_qa_chain
 from langchain_community.embeddings import SentenceTransformerEmbeddings
 import numpy as np
 import tempfile
@@ -20,12 +21,11 @@ import pickle
 st.set_page_config(page_title="GenAI Doc Assistant", layout="wide")
 st.title("📄 GenAI Document Assistant 🌍")
 st.markdown("""
-Upload **PDF** or **DOCX** file and ask any Question related to your uploaded document.  
+Upload **PDF** or **DOCX** file.  
 
 """)
 from dotenv import load_dotenv
 load_dotenv()
-GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
 
 def extract_text_from_page(page):
     """Extract text from a page with orientation correction using OCR if needed."""
@@ -101,7 +101,7 @@ def main():
                     
                     st.success("Embeddings loaded successfully!")
                     
-                    vector_store = FAISS.from_texts(chunks, embedding=embeddings)
+                    vector_store = Chroma.from_texts(chunks, embedding=embeddings)
 
                     # Store the chunks for future use
                     with open(f"{store_name}_chunks.pkl", "wb") as f:
@@ -113,15 +113,6 @@ def main():
 
         # Input query
         query = st.text_input("🗣️ Ask your question (in any language):")
-        prompt = ChatPromptTemplate.from_template("""
-        You are an AI assistant. Use the following context to answer the question.
-        If the answer is not found, say "Information not available in the document."
-        
-        Context:
-        {context}
-        
-        Question: {question}
-        """)
 
         if query:
             # query_embedding = embedder.encode([query])
@@ -129,13 +120,9 @@ def main():
             # top_chunks = [chunks[i] for i in I[0]]
             # context = " ".join(top_chunks)
             docs = vector_store.similarity_search(query=query, k=5)
-            llm = ChatGroq(model="llama3-8b-8192",
-                          api_key = GROQ_API_KEY)
-            chain = create_stuff_documents_chain(llm, prompt)
-            response = chain.invoke({
-            "context": docs,
-            "question": query
-            })
+            llm = ChatGroq(model="llama3-8b-8192")
+            chain = load_qa_chain(llm=llm, chain_type="stuff")
+            response = chain.run(input_documents=docs, question=query)
 
             st.write("🤖 **Response:**", response)
 
