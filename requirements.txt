@@ -8,8 +8,9 @@ python-dotenv
 pypdf2
 python-docx
 faiss-cpu
-langchain_community
-langchain_huggingface
-langchain_groq
+langchain-text-splitters
+langchain-community
+langchain-core
+langchain-groq
 huggingface-hub
 instructorEmbedding
