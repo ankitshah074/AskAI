@@ -33,9 +33,13 @@ check it- https://askai-doc.streamlit.app/
 ## 🛠️ Tech Stack
 
 Languages: Python
+
 Frameworks: LangChain, Streamlit
+
 AI Models: LLaMA 3.1 (Groq API), MiniLM Embeddings
+
 Vector DB: FAISS, Chroma
+
 Libraries: PyPDF2, python-docx, SentenceTransformers 
 
 ---
