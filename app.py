@@ -92,7 +92,7 @@ def main():
             ("human", "Context:\n{context}\n\nQuestion: {question}")
         ])
 
-        llm = ChatGroq(model="llama3-8b-8192")
+        llm = ChatGroq(model="llama-3.1-8b-instant")
 
         rag_chain = (
             RunnableParallel(
