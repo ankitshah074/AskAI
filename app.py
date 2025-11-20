@@ -1,136 +1,124 @@
 import streamlit as st
 from PyPDF2 import PdfReader
 from docx import Document
-from sentence_transformers import SentenceTransformer
-from transformers import pipeline
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceInstructEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import HuggingFaceInstructEmbeddings, SentenceTransformerEmbeddings
+from langchain_community.vectorstores import FAISS, Chroma
 from langchain_groq import ChatGroq
-from langchain.chains import RetrievalQA
-from langchain_community.embeddings import SentenceTransformerEmbeddings
-import numpy as np
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_core.prompts import ChatPromptTemplate
+
 import tempfile
 import os
 import pickle
 
-# Page setup
+
+# ------------------------------- Streamlit UI -------------------------------
 st.set_page_config(page_title="GenAI Doc Assistant", layout="wide")
 st.title("📄 GenAI Document Assistant 🌍")
-st.markdown("""
-Upload **PDF** or **DOCX** file.  
+st.markdown("Upload **PDF**, **TXT**, or **DOCX** and ask questions!")
 
-""")
-from dotenv import load_dotenv
-load_dotenv()
 
-def extract_text_from_page(page):
-    """Extract text from a page with orientation correction using OCR if needed."""
-    text = page.extract_text()
-    return text
-def ocr_extract_text(pdf):
-    """Extract text from an image-based or rotated PDF using OCR."""
-    images = convert_from_path(uploaded_file)
+# -------------------------- Utility Functions --------------------------
+def extract_text_from_pdf(uploaded_file):
+    reader = PdfReader(uploaded_file)
     text = ""
-    
-    for image in images:
-        # Use OCR to detect text in the correct orientation
-        text += pytesseract.image_to_string(image)
-    
+    for page in reader.pages:
+        t = page.extract_text()
+        if t:
+            text += t
     return text
-# Read DOCX
+
+
 def extract_docx_text(path):
     doc = Document(path)
-    return "\n".join([para.text for para in doc.paragraphs])
+    return "\n".join([p.text for p in doc.paragraphs])
+
+
+# ------------------------------- Main App -------------------------------
 def main():
-# Upload section
-    uploaded_file = st.file_uploader("📁 Upload your document", type=["pdf", "txt", "docx"])
+
+    uploaded_file = st.file_uploader("📁 Upload document", type=["pdf", "txt", "docx"])
 
     if uploaded_file:
         ext = uploaded_file.name.split(".")[-1].lower()
 
-        # Read based on file type
+        # Read File
         if ext == "pdf":
-            reader = PdfReader(uploaded_file)
-            text = ""
-            for page in reader.pages:
-                page_text = extract_text_from_page(page)
-                if page_text:
-                    text += page_text
-                else:
-                # If no text was extracted from any pages, use OCR on the entire PDF
-                    text = ocr_extract_text(uploaded_file)
-                    break
+            text = extract_text_from_pdf(uploaded_file)
+
         elif ext == "txt":
             text = uploaded_file.read().decode("utf-8")
+
         elif ext == "docx":
             with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
                 tmp.write(uploaded_file.read())
                 tmp_path = tmp.name
             text = extract_docx_text(tmp_path)
+
         else:
             st.error("Unsupported file format.")
-            st.stop()
+            return
 
-        # Text chunking
-        # splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-        # chunks = splitter.split_text(text)
+        # ------------------- Text Splitting -------------------
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
             chunk_overlap=200,
-            length_function=len
         )
-        chunks = splitter.split_text(text=text)
-        if chunks:
-                store_name = uploaded_file.name[:-4]
+        chunks = splitter.split_text(text)
 
-                if os.path.exists(f"{store_name}_chunks.pkl"):
-                    # Load stored chunks and recreate vector store
-                    with open(f"{store_name}_chunks.pkl", 'rb') as f:
-                        chunks = pickle.load(f)
-                    
-                    with st.spinner("🔍 Indexing document..."):
-                        embeddings = SentenceTransformerEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-                        vector_store = FAISS.from_texts(chunks, embedding=embeddings)
-                else:
-                    with st.spinner("Downloading and loading embeddings, please wait..."):
-                        embeddings = SentenceTransformerEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-                    
-                    st.success("Embeddings loaded successfully!")
-                    
-                    vector_store = Chroma.from_texts(chunks, embedding=embeddings)
+        store_name = uploaded_file.name.replace(".", "_")
 
-                    # Store the chunks for future use
-                    with open(f"{store_name}_chunks.pkl", "wb") as f:
-                        pickle.dump(chunks, f)
-        # Embed & create FAISS index
-        # with st.spinner("🔍 Indexing document..."):
-        #     embeddings = SentenceTransformerEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-        #     index = Chroma.from_texts(texts=chunks, embedding=embeddings)
+        # ------------------- Vector Store Load or Create -------------------
+        if os.path.exists(f"{store_name}_chunks.pkl"):
+            with open(f"{store_name}_chunks.pkl", "rb") as f:
+                chunks = pickle.load(f)
 
-        # Input query
-        query = st.text_input("🗣️ Ask your question (in any language):")
+            embeddings = SentenceTransformerEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+            vectorstore = FAISS.from_texts(chunks, embedding=embeddings)
+
+        else:
+            embeddings = SentenceTransformerEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+            vectorstore = Chroma.from_texts(chunks, embedding=embeddings)
+
+            with open(f"{store_name}_chunks.pkl", "wb") as f:
+                pickle.dump(chunks, f)
+
+        retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+
+        # ------------------- LCEL RAG Pipeline -------------------
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", "You answer questions ONLY using the document."),
+            ("human", "Context:\n{context}\n\nQuestion: {question}")
+        ])
+
+        llm = ChatGroq(model="llama3-8b-8192")
+
+        rag_chain = (
+            RunnableParallel(
+                context=retriever,
+                question=RunnablePassthrough()
+            )
+            | prompt
+            | llm
+        )
+
+        # ------------------- Ask Question -------------------
+        query = st.text_input("🗣️ Ask anything:")
 
         if query:
-            # query_embedding = embedder.encode([query])
-            # D, I = index.search(np.array(query_embedding), k=3)
-            # top_chunks = [chunks[i] for i in I[0]]
-            # context = " ".join(top_chunks)
-            retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
-            llm = ChatGroq(model="llama3-8b-8192")
-            qa = RetrievalQA.from_chain_type(
-                llm=llm,
-                chain_type="stuff",
-                retriever=vectorstore.as_retriever()
-            )
-            response = qa.invoke({"query": query})
+            with st.spinner("🔍 Searching..."):
+                response = rag_chain.invoke(query)
 
-            st.write("🤖 **Response:**", response)
+            st.write("🤖 **Response:**")
+            st.success(response)
+
 
 if __name__ == "__main__":
     main()
-# Add footer or credit
+
+
+# ------------------------------- Sidebar Footer -------------------------------
 st.sidebar.markdown("---")
 st.sidebar.markdown("🧑‍💻 **Built by Ankit Shah**")
-st.sidebar.markdown("[📎 LinkedIn](https://www.linkedin.com/in/ank-it-shah/) | [🐙 GitHub](https://github.com/ankitshah074)")
+st.sidebar.markdown("[LinkedIn](https://www.linkedin.com/in/ank-it-shah/) | [GitHub](https://github.com/ankitshah074)")
